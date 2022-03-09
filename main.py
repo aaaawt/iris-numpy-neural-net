@@ -42,24 +42,6 @@ class Linear:
         return [(self.weight, self.weight_grad)]
 
 
-# def fc(weight, feature):
-#     one = np.ones((feature.shape[0], 1))
-#     xx = np.concatenate((feature, one), axis=1)
-#     return xx @ weight
-#
-#
-# def fc_grad(yy_grad, feature):
-#     """calculate the gradient of fully connected layer.
-#
-#     output = [input, 1] @ weight    let x = [input, 1]
-#     o_{ij} = x_{ik} * w_{kj}
-#     {dl / dw}{kj} = x_{ik} * {dl / do}{ij}
-#     """
-#     one = np.ones((feature.shape[0], 1))
-#     xx = np.concatenate((feature, one), axis=1)
-#     return np.transpose(xx) @ yy_grad
-
-
 class ReLU:
     """ReLU激活层"""
     mask: Optional[np.ndarray]  # 输入中大于<0的掩码（元素为bool），形状与forward输入一致
@@ -101,22 +83,6 @@ class CrossEntropyLoss:
         grad[np.arange(self.label.shape[0]), self.label] -= 1
         grad /= self.label.shape[0]
         return grad
-
-
-# def cross_entropy_loss(predict, label):
-#     ln = np.log(np.sum(np.exp(predict), axis=1)) - predict[np.arange(label.shape[0]), label]
-#     return np.mean(ln)
-#
-# def cross_entropy_loss_grad(predict, label):
-#     """calculate the gradient of cross entropy loss.
-#
-#     dl/dx = 1 / n * (exp x / (sum(exp X)) - {i == label})
-#     """
-#     ee = np.exp(predict)
-#     grad = ee / np.sum(ee, axis=1)[:, np.newaxis]
-#     grad[np.arange(label.shape[0]), label] -= 1
-#     grad /= label.shape[0]
-#     return grad
 
 
 class Compose:
@@ -163,31 +129,11 @@ def train(x_train, y_train, model, loss, optimizer) -> float:
     return train_loss
 
 
-def test(x_test, y_test, model, loss) -> Tuple[float, float]:
+def validate(x_test, y_test, model, loss) -> Tuple[float, float]:
     predict = model.forward(x_test)
     test_loss = loss.forward(predict, y_test)
     test_acc = np.sum(np.argmax(predict, axis=1) == y_test) / y_test.shape[0]
     return test_loss, test_acc
-
-
-# def train(x_train, x_test, y_train, y_test, weight, epoch=200, lr=0.05):
-#     for i in range(epoch):
-#         pre = fc(weight, x_train)
-#         train_loss = cross_entropy_loss(pre, y_train)
-#         valid_loss, acc = validate(x_test, y_test, weight)
-#         print("Iter %3d: train loss = %f, valid loss = %f, accuracy = %f" %
-#               (i, train_loss.item(), valid_loss.item(), acc))
-#         pre_grad = cross_entropy_loss_grad(pre, y_train)
-#         weight_grad = fc_grad(pre_grad, x_train)
-#         weight -= weight_grad * lr
-#     return weight
-#
-#
-# def validate(x, y, weight):
-#     predict = fc(weight, x)
-#     loss = cross_entropy_loss(predict, y)
-#     acc = np.sum(np.argmax(predict, axis=1) == y)/y.shape[0]
-#     return loss, acc
 
 
 def main():
@@ -209,7 +155,7 @@ def main():
     optimizer = SGD(lr=0.03)
     for i in tqdm(range(200)):
         train_loss = train(x_train, y_train, model, loss, optimizer)
-        test_loss, test_acc = test(x_test, y_test, model, loss)
+        test_loss, test_acc = validate(x_test, y_test, model, loss)
         tqdm.write("Iter %4d:  train_loss=%.4f  test_loss=%.4f  test_acc=%.2f%%" %
                    (i, train_loss, test_loss, test_acc * 100))
 
