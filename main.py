@@ -196,6 +196,8 @@ def main():
     y = dataset['target']
     np.random.seed(42)
     # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=42)
+    x_train = x_test = x
+    y_train = y_test = y
     model = Compose([
         Linear(4, 10),
         ReLU(),
@@ -206,8 +208,8 @@ def main():
     loss = CrossEntropyLoss()
     optimizer = SGD(lr=0.03)
     for i in tqdm(range(200)):
-        train_loss = train(x, y, model, loss, optimizer)
-        test_loss, test_acc = test(x, y, model, loss)
+        train_loss = train(x_train, y_train, model, loss, optimizer)
+        test_loss, test_acc = test(x_test, y_test, model, loss)
         tqdm.write("Iter %4d:  train_loss=%.4f  test_loss=%.4f  test_acc=%.2f%%" %
                    (i, train_loss, test_loss, test_acc * 100))
 
