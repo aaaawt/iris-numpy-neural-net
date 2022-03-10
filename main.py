@@ -15,7 +15,7 @@ class Linear:
 
     def __init__(self, num_in: int, num_out: int):
         """随机初始化权重，权重的每个元素是-1到1的均匀分布"""
-        self.weight = np.random.uniform(-1, 1, (num_in + 1, num_out))
+        self.weight = np.random.uniform(-0.5, 0.5, (num_in + 1, num_out))
         self.forward_x = None
         self.weight_grad = None
 
@@ -156,20 +156,26 @@ def main():
     dataset = load_iris()
     x = dataset['data']
     y = dataset['target']
-    np.random.seed(42)
+    x_max = np.max(x, axis=0)
+    x_min = np.min(x, axis=0)
+    x = (x - x_min) / (x_max - x_min) - 0.5
     # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=42)
     x_train = x_test = x
     y_train = y_test = y
     model = Compose([
-        Linear(4, 10),
+        Linear(4, 32),
         ReLU(),
-        Linear(10, 6),
+        Linear(32, 128),
         ReLU(),
-        Linear(6, 3),
+        Linear(128, 128),
+        ReLU(),
+        Linear(128, 32),
+        ReLU(),
+        Linear(32, 3),
     ])
     loss = CrossEntropyLoss()
-    optimizer = SGD(lr=0.03)
-    for i in tqdm(range(200)):
+    optimizer = SGD(lr=0.03, momentum=0.95)
+    for i in tqdm(range(800)):
         train_loss = train(x_train, y_train, model, loss, optimizer)
         test_loss, test_acc = validate(x_test, y_test, model, loss)
         tqdm.write("Iter %4d:  train_loss=%.4f  test_loss=%.4f  test_acc=%.2f%%" %
