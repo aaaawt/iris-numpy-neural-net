@@ -1,8 +1,8 @@
+from itertools import zip_longest
 from typing import List, Tuple, Optional, Any
 
 import numpy as np
 from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 
@@ -110,14 +110,30 @@ class Compose:
 
 class SGD:
     lr: float
+    momentum: float
+    decay: float
+    dampening: float
+    last_step: List[np.ndarray]
 
-    def __init__(self, lr: float = 0.01):
+    def __init__(self, lr: float = 0.01, momentum: float = 0.0, decay: float = 0.0, dampening: float = 0.0):
         self.lr = lr
+        self.momentum = momentum
+        self.decay = decay
+        self.dampening = dampening
+        self.last_step = []
 
     def step(self, weights: List[Tuple[np.ndarray, Optional[np.ndarray]]]):
-        for w, w_grad in weights:
+        curr_step = []
+        for (w, w_grad), (last_w_grad) in zip_longest(weights, self.last_step):
             assert w_grad is not None
+            if self.decay:
+                w_grad = w_grad + self.decay * w
+            if self.momentum:
+                if last_w_grad is not None:
+                    w_grad = self.momentum * last_w_grad + (1 - self.dampening) * w_grad
+                curr_step.append(w_grad)
             w -= self.lr * w_grad
+        self.last_step = curr_step
 
 
 def train(x_train, y_train, model, loss, optimizer) -> float:
