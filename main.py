@@ -2,7 +2,9 @@ from itertools import zip_longest
 from typing import List, Tuple, Optional, Any
 
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 
@@ -159,9 +161,9 @@ def main():
     x_max = np.max(x, axis=0)
     x_min = np.min(x, axis=0)
     x = (x - x_min) / (x_max - x_min) - 0.5
-    # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=42)
-    x_train = x_test = x
-    y_train = y_test = y
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=42)
+    # x_train = x_test = x
+    # y_train = y_test = y
     model = Compose([
         Linear(4, 32),
         ReLU(),
@@ -175,11 +177,27 @@ def main():
     ])
     loss = CrossEntropyLoss()
     optimizer = SGD(lr=0.03, momentum=0.95)
-    for i in tqdm(range(800)):
+    epochs = 800
+    train_losses = []
+    test_losses = []
+    test_accs = []
+    for i in tqdm(range(epochs)):
         train_loss = train(x_train, y_train, model, loss, optimizer)
         test_loss, test_acc = validate(x_test, y_test, model, loss)
         tqdm.write("Iter %4d:  train_loss=%.4f  test_loss=%.4f  test_acc=%.2f%%" %
                    (i, train_loss, test_loss, test_acc * 100))
+        train_losses.append(train_loss)
+        test_losses.append(test_loss)
+        test_accs.append(test_acc)
+    x = np.arange(epochs)
+    fig, ax = plt.subplots()
+    lns1 = ax.plot(x, train_losses, label="Train Loss")
+    lns2 = ax.plot(x, test_losses, label="Test Loss")
+    ax = ax.twinx()
+    lns3 = ax.plot(x, test_accs, label="Test Accuracy", c='g')
+    lns = lns1 + lns2 + lns3
+    ax.legend(lns, [x.get_label() for x in lns])
+    plt.show()
 
 
 if __name__ == '__main__':
